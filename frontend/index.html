@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Roast Battle Arena 🔥</title>
+  <style>
+    /* ── GLOBAL ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #070b0f;
+      color: #e2e8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      text-align: center;
+      padding: 40px 20px 20px;
+      border-bottom: 1px solid #0d2d2d;
+    }
+    header .label {
+      font-size: 11px;
+      letter-spacing: 4px;
+      color: #0d9488;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    header h1 {
+      font-size: 32px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #14b8a6, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    header p {
+      color: #475569;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    /* ── SCREEN MANAGEMENT ── */
+    /* Only the active screen is shown */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── SELECT SCREEN ── */
+    .select-title {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: #94a3b8;
+      margin-bottom: 24px;
+    }
+
+    .fighters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    /* Each fighter card on the selection screen */
+    .fighter-card {
+      background: #0d1117;
+      border: 2px solid #1e2d2d;
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .fighter-card:hover {
+      border-color: #0d9488;
+      transform: translateY(-3px);
+    }
+    .fighter-card.selected {
+      border-color: #14b8a6;
+      background: #071a1a;
+      box-shadow: 0 0 20px #14b8a620;
+    }
+    .fighter-card .emoji { font-size: 40px; margin-bottom: 10px; }
+    .fighter-card .fname { font-weight: 700; font-size: 15px; color: #f1f5f9; }
+    .fighter-card .ftitle { font-size: 11px; color: #475569; margin-top: 4px; }
+
+    /* Start button */
+    .btn-start {
+      display: block;
+      width: 100%;
+      max-width: 340px;
+      margin: 0 auto;
+      padding: 16px;
+      background: linear-gradient(135deg, #0d9488, #0891b2);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 800;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      letter-spacing: 1px;
+    }
+    .btn-start:disabled { opacity: 0.3; cursor: not-allowed; }
+    .btn-start:hover:not(:disabled) { opacity: 0.85; }
+
+    /* ── BATTLE SCREEN ── */
+    /* The two fighter nameplates at the top */
+    .arena-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      gap: 12px;
+    }
+    .arena-fighter {
+      flex: 1;
+      background: #0d1117;
+      border: 2px solid #1e2d2d;
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+    }
+    .arena-fighter .emoji { font-size: 36px; }
+    .arena-fighter .fname { font-weight: 800; font-size: 15px; margin-top: 6px; }
+    .arena-fighter .ftitle { font-size: 11px; color: #475569; margin-top: 3px; }
+    .arena-vs {
+      font-size: 22px;
+      font-weight: 900;
+      color: #14b8a6;
+      flex-shrink: 0;
+    }
+
+    /* Round counter */
+    .round-badge {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #475569;
+    }
+    .round-badge span {
+      background: #0d2d2d;
+      border: 1px solid #0d9488;
+      color: #14b8a6;
+      padding: 4px 16px;
+      border-radius: 20px;
+      font-weight: 700;
+    }
+
+    /* The roast feed — where messages appear */
+    .roast-feed {
+      background: #0a0e12;
+      border: 1px solid #1e2d2d;
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 220px;
+      max-height: 360px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* One roast bubble */
+    .roast-bubble {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      animation: fadeIn 0.4s ease;
+    }
+    /* Align fighter 2's bubbles to the right */
+    .roast-bubble.right {
+      flex-direction: row-reverse;
+    }
+    .roast-bubble .avatar {
+      font-size: 28px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .roast-bubble .bubble-body { max-width: 75%; }
+    .roast-bubble .bubble-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0d9488;
+      margin-bottom: 4px;
+    }
+    .roast-bubble.right .bubble-name {
+      text-align: right;
+      color: #06b6d4;
+    }
+    .roast-bubble .bubble-text {
+      background: #111827;
+      border: 1px solid #1e2d2d;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 14px;
+      line-height: 1.55;
+      color: #e2e8f0;
+    }
+    .roast-bubble .bubble-hash {
+      font-size: 10px;
+      color: #334155;
+      margin-top: 4px;
+    }
+    .roast-bubble .bubble-hash a {
+      color: #0d9488;
+      text-decoration: none;
+    }
+    .roast-bubble .bubble-hash a:hover { text-decoration: underline; }
+
+    /* Typing indicator shown while AI is thinking */
+    .typing-indicator {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+    }
+    .typing-indicator.visible { display: flex; }
+    .typing-indicator span {
+      font-size: 13px;
+      color: #475569;
+      font-style: italic;
+    }
+    .dots span {
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: #0d9488;
+      border-radius: 50%;
+      animation: bounce 1s infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.15s; }
+    .dots span:nth-child(3) { animation-delay: 0.3s; }
+
+    /* The two fighter attack buttons */
+    .attack-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .btn-attack {
+      padding: 14px;
+      background: #0d1117;
+      border: 2px solid #1e2d2d;
+      border-radius: 12px;
+      color: #e2e8f0;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-attack:hover:not(:disabled) {
+      border-color: #14b8a6;
+      background: #071a1a;
+    }
+    .btn-attack:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Reset button */
+    .btn-reset {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 1px solid #1e2d2d;
+      border-radius: 12px;
+      color: #475569;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-reset:hover {
+      border-color: #475569;
+      color: #94a3b8;
+    }
+
+    /* ── WALLET CONNECT BAR ── */
+    .wallet-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      background: #0d1117;
+      border-bottom: 1px solid #1e2d2d;
+    }
+    .btn-wallet {
+      padding: 8px 18px;
+      background: #0d2d2d;
+      border: 1px solid #0d9488;
+      border-radius: 20px;
+      color: #14b8a6;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-wallet:hover { background: #0d9488; color: #fff; }
+    .wallet-address {
+      font-size: 12px;
+      color: #475569;
+      font-family: monospace;
+    }
+
+    /* ── WINNER SCREEN ── */
+    .winner-screen {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .winner-trophy { font-size: 64px; margin-bottom: 16px; }
+    .winner-title {
+      font-size: 14px;
+      letter-spacing: 3px;
+      color: #0d9488;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .winner-name {
+      font-size: 32px;
+      font-weight: 900;
+      color: #f1f5f9;
+      margin-bottom: 6px;
+    }
+    .winner-sub { color: #475569; font-size: 14px; margin-bottom: 32px; }
+
+    /* ── VOTING SECTION ── */
+    .vote-section {
+      margin: 24px 0;
+      background: #0d1117;
+      border: 1px solid #0d9488;
+      border-radius: 16px;
+      padding: 24px;
+    }
+    .vote-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0d9488;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+    .vote-subtitle {
+      font-size: 12px;
+      color: #475569;
+      margin-bottom: 20px;
+    }
+    .vote-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .btn-vote {
+      padding: 14px;
+      background: #071a1a;
+      border: 2px solid #0d9488;
+      border-radius: 12px;
+      color: #f1f5f9;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-vote:hover:not(:disabled) {
+      background: #0d9488;
+      color: #fff;
+    }
+    .btn-vote:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-vote .vote-count {
+      display: block;
+      font-size: 11px;
+      font-weight: 400;
+      color: #14b8a6;
+      margin-top: 4px;
+    }
+    .vote-status {
+      font-size: 12px;
+      color: #475569;
+      text-align: center;
+      min-height: 18px;
+    }
+    .vote-status.success { color: #4ade80; }
+    .vote-status.error { color: #f87171; }
+
+    .btn-play-again {
+      padding: 16px 40px;
+      background: linear-gradient(135deg, #0d9488, #0891b2);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 800;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      margin-top: 8px;
+    }
+    .btn-play-again:hover { opacity: 0.85; }
+
+    /* ── STATUS MESSAGE ── */
+    .status-msg {
+      text-align: center;
+      font-size: 13px;
+      color: #475569;
+      margin-top: 12px;
+      min-height: 20px;
+    }
+    .status-msg.error { color: #f87171; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ HEADER ══ -->
+  <!-- ══ WALLET BAR ══ -->
+  <div class="wallet-bar">
+    <span class="wallet-address" id="wallet-address">Not connected</span>
+    <button class="btn-wallet" id="btn-wallet" onclick="connectWallet()">
+      Connect Wallet
+    </button>
+  </div>
+
+  <header>
+    <div class="label">OpenGradient × Base Sepolia</div>
+    <h1>⚔️ AI Roast Battle Arena</h1>
+    <p>Two AIs enter. One roasts. Powered by verifiable AI on OpenGradient.</p>
+  </header>
+
+  <div class="container">
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- SCREEN 1: FIGHTER SELECT               -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="screen-select" class="screen active">
+      <p class="select-title">✨ Two random fighters have entered the arena</p>
+
+      <!-- Fighter cards are injected here by JS -->
+      <div class="fighters-grid" id="fighters-grid"></div>
+
+      <button class="btn-start" id="btn-start" onclick="startBattle()">
+        ⚔️ START THE BATTLE
+      </button>
+
+      <p class="status-msg" id="select-status">Loading fighters...</p>
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- SCREEN 2: BATTLE ARENA                 -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="screen-battle" class="screen">
+
+      <!-- Fighter nameplates -->
+      <div class="arena-header">
+        <div class="arena-fighter" id="arena-f1">
+          <div class="emoji" id="f1-emoji"></div>
+          <div class="fname" id="f1-name"></div>
+          <div class="ftitle" id="f1-title"></div>
+        </div>
+        <div class="arena-vs">VS</div>
+        <div class="arena-fighter" id="arena-f2">
+          <div class="emoji" id="f2-emoji"></div>
+          <div class="fname" id="f2-name"></div>
+          <div class="ftitle" id="f2-title"></div>
+        </div>
+      </div>
+
+      <!-- Round counter -->
+      <div class="round-badge">
+        Round <span id="round-counter">1</span> of 6
+      </div>
+
+      <!-- Where roasts appear -->
+      <div class="roast-feed" id="roast-feed">
+        <div class="typing-indicator" id="typing">
+          <div class="dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span id="typing-label">Warming up...</span>
+        </div>
+      </div>
+
+      <!-- Attack buttons -->
+      <div class="attack-btns">
+        <button class="btn-attack" id="btn-f1" onclick="triggerRoast('f1')">
+          🔥 <span id="btn-f1-label">Fighter 1</span> attacks!
+        </button>
+        <button class="btn-attack" id="btn-f2" onclick="triggerRoast('f2')">
+          🔥 <span id="btn-f2-label">Fighter 2</span> attacks!
+        </button>
+      </div>
+
+      <button class="btn-reset" onclick="resetArena()">↩ New Battle</button>
+      <p class="status-msg" id="battle-status"></p>
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- SCREEN 3: WINNER + VOTING              -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="screen-winner" class="screen">
+      <div class="winner-screen">
+        <div class="winner-trophy">🏆</div>
+        <div class="winner-title">Battle Over — Cast Your Vote!</div>
+        <div class="winner-name" id="winner-name">Chad Degen</div>
+        <div class="winner-sub" id="winner-sub">Who had the best roasts?</div>
+
+        <!-- VOTING SECTION -->
+        <div class="vote-section">
+          <div class="vote-title">🗳️ Vote for the Winner</div>
+          <div class="vote-subtitle">Costs 0.001 $OPG · Requires MetaMask · Base Sepolia</div>
+          <div class="vote-btns">
+            <button class="btn-vote" id="vote-btn-f1" onclick="castVote('f1')">
+              <span id="vote-f1-emoji"></span>
+              <span id="vote-f1-name">Fighter 1</span>
+              <span class="vote-count" id="vote-count-f1">0 votes</span>
+            </button>
+            <button class="btn-vote" id="vote-btn-f2" onclick="castVote('f2')">
+              <span id="vote-f2-emoji"></span>
+              <span id="vote-f2-name">Fighter 2</span>
+              <span class="vote-count" id="vote-count-f2">0 votes</span>
+            </button>
+          </div>
+          <div class="vote-status" id="vote-status">
+            Connect wallet above to vote
+          </div>
+        </div>
+
+        <button class="btn-play-again" onclick="resetArena()">⚔️ New Battle</button>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- JAVASCRIPT — all the logic lives here  -->
+  <!-- ══════════════════════════════════════ -->
+  <script>
+    // ── CONFIG ──────────────────────────────
+    const API          = "http://127.0.0.1:8000";
+    const OPG_TOKEN    = "0x240b09731D96979f50B2C649C9CE10FcF9C7987F";
+    const VOTE_AMOUNT  = "0x38D7EA4C68000"; // 0.001 OPG in hex wei
+    const RECIPIENT    = "0x000000000000000000000000000000000000dEaD"; // burn address for testnet votes
+
+    // ── STATE ───────────────────────────────
+    let allFighters    = {};
+    let fighter1Id     = null;
+    let fighter2Id     = null;
+    let currentBattle  = null;
+    let isLoading      = false;
+    let walletAddress  = null;  // Connected wallet address
+    let hasVoted       = false; // Prevents double voting
+
+    // ── CONNECT WALLET ───────────────────────
+    async function connectWallet() {
+      if (!window.ethereum) {
+        alert("MetaMask not found! Please install it from metamask.io");
+        return;
+      }
+      try {
+        // Force switch to Base Sepolia (Chain ID 84532 = 0x14A34 in hex)
+        try {
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0x14A34" }],
+          });
+        } catch (switchError) {
+          // If Base Sepolia isn't added yet, add it automatically
+          if (switchError.code === 4902) {
+            await window.ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [{
+                chainId: "0x14A34",
+                chainName: "Base Sepolia Testnet",
+                nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
+                rpcUrls: ["https://sepolia.base.org"],
+                blockExplorerUrls: ["https://sepolia.basescan.org"],
+              }],
+            });
+          }
+        }
+
+        // Now request wallet connection
+        const accounts = await window.ethereum.request({
+          method: "eth_requestAccounts"
+        });
+        walletAddress = accounts[0];
+
+        // Show shortened address in the wallet bar
+        const short = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
+        document.getElementById("wallet-address").textContent = short;
+        document.getElementById("btn-wallet").textContent = "Connected ✅";
+        document.getElementById("btn-wallet").style.borderColor = "#4ade80";
+        document.getElementById("btn-wallet").style.color = "#4ade80";
+
+        // Update vote status if we're on the winner screen
+        setVoteStatus("Wallet connected! Cast your vote below.", false);
+
+      } catch (e) {
+        alert("Wallet connection cancelled.");
+      }
+    }
+
+    // ── CAST A VOTE ──────────────────────────
+    async function castVote(slot) {
+      // Sends 0.001 OPG from user's wallet to vote for a fighter
+      // Each vote = a real Base Sepolia ERC-20 transfer transaction
+
+      if (!walletAddress) {
+        setVoteStatus("Please connect your wallet first!", true);
+        return;
+      }
+      if (hasVoted) {
+        setVoteStatus("You already voted in this battle!", true);
+        return;
+      }
+      if (!currentBattle) return;
+
+      const fighterId = slot === "f1"
+        ? currentBattle.fighter1
+        : currentBattle.fighter2;
+
+      const fighterName = allFighters[fighterId].name;
+      setVoteStatus(`Sending 0.001 OPG vote for ${fighterName}...`);
+
+      // Disable vote buttons while processing
+      document.getElementById("vote-btn-f1").disabled = true;
+      document.getElementById("vote-btn-f2").disabled = true;
+
+      try {
+        // Build the ERC-20 transfer call
+        // This transfers 0.001 OPG from user's wallet to the burn address
+        // transfer(address,uint256) function signature
+        const data = "0xa9059cbb" +
+          // Recipient address padded to 32 bytes (burn address)
+          "000000000000000000000000000000000000000000000000000000000000dEaD" +
+          // Amount: 0.001 OPG = 1000000000000000 wei in hex, padded to 32 bytes
+          "00000000000000000000000000000000000000000000000000038D7EA4C68000";
+
+        // This triggers MetaMask popup for the user to confirm the transaction
+        const txHash = await window.ethereum.request({
+          method: "eth_sendTransaction",
+          params: [{
+            from: walletAddress,
+            to: OPG_TOKEN,      // OPG token contract
+            data: data,         // ERC-20 transfer call
+            gas: "0x186A0",     // 100,000 gas limit
+          }]
+        });
+
+        // Tell the backend to record this vote
+        const res = await fetch(`${API}/api/cast-vote`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            battle_id: currentBattle.id,
+            fighter_id: fighterId,
+            voter_address: walletAddress,
+          })
+        });
+
+        const data2 = await res.json();
+
+        if (data2.error) {
+          setVoteStatus(data2.error, true);
+          document.getElementById("vote-btn-f1").disabled = false;
+          document.getElementById("vote-btn-f2").disabled = false;
+          return;
+        }
+
+        // Update vote counts on screen
+        hasVoted = true;
+        updateVoteCounts(data2.votes);
+        setVoteStatus(`✅ Vote cast for ${fighterName}! Tx: ${txHash.slice(0,16)}...`, false, true);
+
+      } catch (e) {
+        // User rejected the transaction in MetaMask
+        setVoteStatus("Transaction cancelled or failed.", true);
+        document.getElementById("vote-btn-f1").disabled = false;
+        document.getElementById("vote-btn-f2").disabled = false;
+      }
+    }
+
+    // ── UPDATE VOTE COUNTS ────────────────────
+    function updateVoteCounts(votes) {
+      if (!currentBattle || !votes) return;
+      const f1Votes = votes[currentBattle.fighter1] || 0;
+      const f2Votes = votes[currentBattle.fighter2] || 0;
+      document.getElementById("vote-count-f1").textContent = `${f1Votes} vote${f1Votes !== 1 ? "s" : ""}`;
+      document.getElementById("vote-count-f2").textContent = `${f2Votes} vote${f2Votes !== 1 ? "s" : ""}`;
+    }
+
+    // ── SET VOTE STATUS MESSAGE ───────────────
+    function setVoteStatus(msg, isError = false, isSuccess = false) {
+      const el = document.getElementById("vote-status");
+      if (!el) return;
+      el.textContent = msg;
+      el.className = "vote-status" + (isError ? " error" : isSuccess ? " success" : "");
+    }
+
+    // ── ON PAGE LOAD ────────────────────────
+    // Fetch all fighters and auto-select a random pair
+    window.onload = async () => {
+      await loadFighters();
+    };
+
+    // ── LOAD FIGHTERS FROM BACKEND ──────────
+    async function loadFighters() {
+      try {
+        const res  = await fetch(`${API}/api/fighters`);
+        allFighters = await res.json();
+
+        renderFighterGrid();
+        pickRandomPair();
+        setStatus("select", "");
+
+      } catch (e) {
+        setStatus("select", "⚠️ Cannot reach backend. Is the server running?", true);
+      }
+    }
+
+    // ── RENDER FIGHTER CARDS ────────────────
+    function renderFighterGrid() {
+      const grid = document.getElementById("fighters-grid");
+      grid.innerHTML = "";
+
+      for (const [id, f] of Object.entries(allFighters)) {
+        const card = document.createElement("div");
+        card.className = "fighter-card";
+        card.id = `card-${id}`;
+        card.innerHTML = `
+          <div class="emoji">${f.emoji}</div>
+          <div class="fname">${f.name}</div>
+          <div class="ftitle">${f.title}</div>
+        `;
+        // Clicking a card selects/deselects it
+        card.onclick = () => toggleFighter(id);
+        grid.appendChild(card);
+      }
+    }
+
+    // ── AUTO-PICK A RANDOM PAIR ─────────────
+    function pickRandomPair() {
+      const ids = Object.keys(allFighters);
+      // Shuffle and take the first two
+      const shuffled = ids.sort(() => Math.random() - 0.5);
+      fighter1Id = shuffled[0];
+      fighter2Id = shuffled[1];
+      updateCardHighlights();
+      updateStartButton();
+    }
+
+    // ── TOGGLE FIGHTER SELECTION ─────────────
+    function toggleFighter(id) {
+      if (fighter1Id === id) {
+        fighter1Id = null;
+      } else if (fighter2Id === id) {
+        fighter2Id = null;
+      } else if (!fighter1Id) {
+        fighter1Id = id;
+      } else if (!fighter2Id) {
+        fighter2Id = id;
+      } else {
+        // Both slots full — replace fighter1
+        fighter1Id = id;
+      }
+      updateCardHighlights();
+      updateStartButton();
+    }
+
+    // ── HIGHLIGHT SELECTED CARDS ─────────────
+    function updateCardHighlights() {
+      for (const id of Object.keys(allFighters)) {
+        const card = document.getElementById(`card-${id}`);
+        card.classList.toggle("selected", id === fighter1Id || id === fighter2Id);
+      }
+    }
+
+    // ── ENABLE/DISABLE START BUTTON ──────────
+    function updateStartButton() {
+      const btn = document.getElementById("btn-start");
+      btn.disabled = !(fighter1Id && fighter2Id);
+    }
+
+    // ── START THE BATTLE ─────────────────────
+    async function startBattle() {
+      if (!fighter1Id || !fighter2Id) return;
+
+      setStatus("select", "Starting battle...");
+
+      try {
+        const res = await fetch(`${API}/api/start-battle`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fighter1_id: fighter1Id, fighter2_id: fighter2Id }),
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+          setStatus("select", data.error, true);
+          return;
+        }
+
+        currentBattle = data.battle;
+        showBattleScreen();
+
+      } catch (e) {
+        setStatus("select", "⚠️ Could not start battle. Is the server running?", true);
+      }
+    }
+
+    // ── SET UP AND SHOW THE BATTLE SCREEN ────
+    function showBattleScreen() {
+      const f1 = allFighters[currentBattle.fighter1];
+      const f2 = allFighters[currentBattle.fighter2];
+
+      // Fill in the fighter nameplates
+      document.getElementById("f1-emoji").textContent = f1.emoji;
+      document.getElementById("f1-name").textContent  = f1.name;
+      document.getElementById("f1-title").textContent = f1.title;
+      document.getElementById("f2-emoji").textContent = f2.emoji;
+      document.getElementById("f2-name").textContent  = f2.name;
+      document.getElementById("f2-title").textContent = f2.title;
+
+      // Fill in the attack button labels
+      document.getElementById("btn-f1-label").textContent = f1.name;
+      document.getElementById("btn-f2-label").textContent = f2.name;
+
+      // Clear old roasts
+      document.getElementById("roast-feed").innerHTML = `
+        <div class="typing-indicator" id="typing">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span id="typing-label">Warming up...</span>
+        </div>
+      `;
+
+      document.getElementById("round-counter").textContent = "1";
+      setStatus("battle", "");
+      showScreen("battle");
+    }
+
+    // ── TRIGGER A ROAST FROM ONE FIGHTER ─────
+    async function triggerRoast(slot) {
+      if (isLoading) return; // Don't allow double-clicks
+      isLoading = true;
+      setButtonsDisabled(true);
+
+      const attackerId = slot === "f1"
+        ? currentBattle.fighter1
+        : currentBattle.fighter2;
+
+      const fighter = allFighters[attackerId];
+
+      // Show the typing indicator while waiting for AI
+      showTyping(`${fighter.name} is thinking...`);
+
+      try {
+        const res = await fetch(`${API}/api/generate-roast`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            battle_id: currentBattle.id,
+            attacking_fighter_id: attackerId,
+          }),
+        });
+
+        const data = await res.json();
+        hideTyping();
+
+        if (data.error) {
+          setStatus("battle", data.error, true);
+          isLoading = false;
+          setButtonsDisabled(false);
+          return;
+        }
+
+        // Add the roast bubble to the feed
+        addRoastBubble(data, slot);
+
+        // Update round counter
+        const round = Math.min(data.round, 6);
+        document.getElementById("round-counter").textContent = round;
+
+        // Check if battle is over
+        if (data.battle_status === "voting" || data.battle_status === "finished") {
+          setTimeout(() => showWinner(data), 1200);
+          return;
+        }
+
+        isLoading = false;
+        setButtonsDisabled(false);
+
+      } catch (e) {
+        hideTyping();
+        setStatus("battle", "⚠️ AI took too long. Try again!", true);
+        isLoading = false;
+        setButtonsDisabled(false);
+      }
+    }
+
+    // ── ADD A ROAST BUBBLE TO THE FEED ───────
+    function addRoastBubble(data, slot) {
+      const feed    = document.getElementById("roast-feed");
+      const isRight = slot === "f2"; // Fighter 2 appears on the right
+      const hashUrl = `https://sepolia.basescan.org/tx/${data.payment_hash}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = `roast-bubble ${isRight ? "right" : ""}`;
+      bubble.innerHTML = `
+        <div class="avatar">${data.attacker_emoji}</div>
+        <div class="bubble-body">
+          <div class="bubble-name">${data.attacker_name}</div>
+          <div class="bubble-text">${data.roast}</div>
+          <div class="bubble-hash">
+            ⛓️ <a href="${hashUrl}" target="_blank" title="View on Base Sepolia">
+              ${data.payment_hash ? data.payment_hash.slice(0, 20) + "..." : "processing..."}
+            </a>
+          </div>
+        </div>
+      `;
+
+      feed.appendChild(bubble);
+      // Auto-scroll to the latest roast
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    // ── SHOW WINNER SCREEN ────────────────────
+    function showWinner(lastRoast) {
+      const f1 = allFighters[currentBattle.fighter1];
+      const f2 = allFighters[currentBattle.fighter2];
+
+      // Fill in winner screen text
+      document.getElementById("winner-name").textContent  = lastRoast.attacker_name;
+      document.getElementById("winner-sub").textContent   =
+        `${lastRoast.attacker_emoji} Last one standing after 6 rounds!`;
+
+      // Fill in vote button labels
+      document.getElementById("vote-f1-emoji").textContent = f1.emoji + " ";
+      document.getElementById("vote-f1-name").textContent  = f1.name;
+      document.getElementById("vote-f2-emoji").textContent = f2.emoji + " ";
+      document.getElementById("vote-f2-name").textContent  = f2.name;
+
+      // Reset vote state for new battle
+      hasVoted = false;
+      document.getElementById("vote-btn-f1").disabled = false;
+      document.getElementById("vote-btn-f2").disabled = false;
+      updateVoteCounts({ [currentBattle.fighter1]: 0, [currentBattle.fighter2]: 0 });
+
+      // Show wallet status in vote section
+      if (walletAddress) {
+        setVoteStatus("Cast your vote below!");
+      } else {
+        setVoteStatus("Connect your wallet above to vote.");
+      }
+
+      showScreen("winner");
+    }
+
+    // ── RESET EVERYTHING FOR A NEW BATTLE ─────
+    function resetArena() {
+      currentBattle = null;
+      fighter1Id    = null;
+      fighter2Id    = null;
+      isLoading     = false;
+      pickRandomPair();
+      showScreen("select");
+      setStatus("select", "");
+    }
+
+    // ── HELPERS ───────────────────────────────
+
+    // Show only one screen at a time
+    function showScreen(name) {
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      document.getElementById(`screen-${name}`).classList.add("active");
+    }
+
+    // Show the animated typing dots
+    function showTyping(label) {
+      const t = document.getElementById("typing");
+      if (t) {
+        document.getElementById("typing-label").textContent = label;
+        t.classList.add("visible");
+        document.getElementById("roast-feed").scrollTop = 99999;
+      }
+    }
+
+    // Hide the typing dots
+    function hideTyping() {
+      const t = document.getElementById("typing");
+      if (t) t.classList.remove("visible");
+    }
+
+    // Enable or disable both attack buttons
+    function setButtonsDisabled(disabled) {
+      document.getElementById("btn-f1").disabled = disabled;
+      document.getElementById("btn-f2").disabled = disabled;
+    }
+
+    // Show a status message (red if error)
+    function setStatus(screen, msg, isError = false) {
+      const el = document.getElementById(
+        screen === "select" ? "select-status" : "battle-status"
+      );
+      if (!el) return;
+      el.textContent = msg;
+      el.className   = `status-msg${isError ? " error" : ""}`;
+    }
+  </script>
+
+</body>
+</html>
